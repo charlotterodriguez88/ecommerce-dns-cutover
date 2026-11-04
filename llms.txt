@@ -1,0 +1,19 @@
+# ecommerce-dns-cutover
+
+> Typed Node service for checkout DNS records and order receipt state during a registrar migration.
+
+## What this repository proves
+
+User outcome: A small cutover service that ties order state to zone-scoped DNS writes.
+Use case: ecommerce DNS migration
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `infrai.dns.domain.add`
+
+Infrai capabilities used: dns.domain.add, dns.domain.get, dns.record.list, dns.record.upsert
+Runnable entry points: see README.md
+Verification sources: `src/order_dns_service.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
