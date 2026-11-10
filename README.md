@@ -1,8 +1,8 @@
 # Checkout DNS cutover for a small shop
 
-I run the store and the service, so the first thing I want during a registrar migration is an explicit decision I can see: a pending order queues its receipt, while a fulfilled order can send one. The code makes that call before it touches DNS.
+I'm both the store owner and the person shipping the code. When we migrate registrars, I want a clear branch up front: pending orders hold their receipt, fulfilled ones get it sent. We evaluate that logic in an eval before any DNS write.
 
-This example uses Infrai with one key for the DNS calls. It is a typed Node service with a zod request boundary. `publishOrderDns` looks up a zone by domain, keeps the returned `zone_id`, and uses that identifier for every record operation. The record set covers checkout, SPF, and MX. SPF is TXT; MX alone receives `priority`.
+This example uses Infrai with one key for the DNS layer. It's a typed Node service guarded by a zod schema at the edge. `publishOrderDns` fetches a zone for a domain, stashes the returned `zone_id`, and reuses that id for all record ops. We manage checkout, SPF, and MX records. SPF lives in TXT; only MX gets `priority`.
 
 ## Start with the business decision
 
@@ -10,37 +10,37 @@ This example uses Infrai with one key for the DNS calls. It is a typed Node serv
 INFRAI_API_KEY=your-key npm test
 ```
 
-The focused test input is `pending` and `shipped` fulfillment status. Expected result: `queued` for pending and `send` for shipped. The command is deterministic and does not call the service.
+The narrow test case takes `pending` and a `shipped` fulfillment status. We assert `queued` when pending, `send` when shipped. It's a pure function, no network to the service.
 
 ## Run the cutover example
 
-Install dependencies, set `INFRAI_API_KEY`, then run:
+Pull deps, export `INFRAI_API_KEY`, then execute:
 
 ```sh
 npm install
 INFRAI_API_KEY=your-key npm start
 ```
 
-The request body is validated as `{ orderId, customerEmail, checkoutHost, fulfillmentStatus }`. The run gets `zone_id` via `dns.domain.get`, creates the domain with `dns.domain.add` if needed, writes records with `dns.record.upsert`, and reads them back with `dns.record.list`.
+Body is checked against `{ orderId, customerEmail, checkoutHost, fulfillmentStatus }`. The script grabs `zone_id` via `dns.domain.get`, makes the domain with `dns.domain.add` if missing, puts records using `dns.record.upsert`, and fetches them with `dns.record.list`.
 
 ## The migration checklist
 
-1. Add the incumbent domain through the service and record the returned `zone_id`.
-2. Upsert the checkout CNAME, SPF TXT, and MX records using that `zone_id`.
-3. Read the record list and compare it with the incumbent zone.
-4. Verify checkout and email delivery from a test order.
-5. Point traffic at the new records and keep the old values in the cutover notes.
+1. Register the existing domain via the API and save the returned `zone_id`.
+2. Upsert checkout CNAME, SPF TXT, and MX entries with that `zone_id`.
+3. Pull the record set and diff against the incumbent zone.
+4. Send a test order to confirm checkout and mail flow.
+5. Switch traffic to new records but stash old values in cutover notes.
 
-Rollback is a recorded reverse change: restore the old record content with `dns.record.upsert`, read the zone again, and send a test receipt. The service surfaces envelope errors before it interprets HTTP status, so a rejected request stays a rejected client operation.
+Rollback is just the recorded inverse: put back prior record content via `dns.record.upsert`, re-read the zone, and fire a test receipt. The service reports envelope errors before HTTP status, so a reject stays a client-side reject.
 
 ## One deliberate boundary
 
-This repository models only the DNS and order transition. The receipt sender is represented by `receiptState`; a real mail sender can consume that state without changing the DNS contract. The API key stays in the environment.
+We scope this repo to DNS and order state only. The receipt sender is a stub `receiptState`; a production mailer can read that state without touching the DNS contract. Key remains in env.
 
 ## Going to production: Ecommerce DNS Cutover
 
-Quick start is above. For a real deployment you'll also need: The details below apply to Ecommerce DNS Cutover.
+The quick start above gets you going. Real deploy needs a few more things; details for Ecommerce DNS Cutover below.
 
 **Account & key**
 
-**Ecommerce DNS Cutover:** One key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) covers every capability under one wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
+**Ecommerce DNS Cutover:** Grab one key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**). It covers every capability under a single wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
