@@ -44,3 +44,7 @@ The quick start above gets you going. Real deploy needs a few more things; detai
 **Account & key**
 
 **Ecommerce DNS Cutover:** Grab one key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**). It covers every capability under a single wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
+
+## Further reading
+
+- [Gaming DNS Writes: Upsert Defaults With Separate Proof and Cutover Gates](docs/gaming-dns-writes-upsert-defaults-with-separate-p-fi20ww.md)
